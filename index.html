@@ -70,7 +70,8 @@
   .prompt{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;line-height:1.28;margin:0 0 18px;letter-spacing:-.01em;}
   .prompt .goal{color:var(--acc-deep);transition:color .5s;}
 
-  .stage{position:relative;display:flex;justify-content:center;border-radius:16px;}
+  .stage{position:relative;display:flex;justify-content:center;border-radius:16px;width:100%;}
+  #ggb{max-width:100%;}
   .stage.flash-ok{animation:flashOk .8s ease;}
   .stage.flash-no{animation:flashNo .8s ease;}
   @keyframes flashOk{0%{box-shadow:0 0 0 0 rgba(15,166,120,.55);}100%{box-shadow:0 0 0 16px rgba(15,166,120,0);}}
@@ -143,6 +144,27 @@
   .fade{animation:fade .38s cubic-bezier(.2,.9,.3,1);}
   @keyframes fade{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
   .pagefoot{text-align:center;margin-top:22px;font-size:11.5px;color:var(--ink-soft);font-family:'Space Mono',monospace;letter-spacing:.03em;}
+  /* ---- mobile ---- */
+  @media(max-width:480px){
+    .wrap{padding:16px 12px 40px;}
+    #start .card{padding:28px 20px;}
+    #start h1{font-size:29px;}
+    #start p.lead{font-size:15px;}
+    #quiz .panel{padding:16px 13px 18px;}
+    .prompt{font-size:19px;margin-bottom:14px;}
+    .qtop{flex-wrap:wrap;gap:8px;}
+    .pips i{width:10px;height:5px;}
+    .pips i.current{width:18px;}
+    .readout .val{font-size:16px;min-width:100px;padding:5px 12px;}
+    .actions .btn, .footer-row .btn{width:100%;text-align:center;}
+    .footer-row{margin-top:14px;}
+    .feedback{padding:12px 13px;font-size:14px;}
+    #result .card{padding:24px 18px;}
+    .score-hero{gap:18px;}
+    .ring{width:100px;height:100px;}
+    .ring .inner{width:78px;height:78px;}
+    .ring .num{font-size:26px;}
+  }
   @media(prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
 </style>
 </head>
@@ -358,7 +380,13 @@ function burstConfetti(canvasId,count){
 }
 
 /* ---- GeoGebra ---- */
-function sizeForStage(){return Math.max(280,Math.min(462,window.innerWidth-58));}
+function sizeForStage(){
+  /* measure the visible start card's inner width (quiz panel matches it),
+     minus panel padding — avoids the old overflow-on-mobile bug */
+  var card=document.querySelector('#start .card');
+  var inner=card ? card.clientWidth-46 : window.innerWidth-82;
+  return Math.max(250,Math.min(462,inner));
+}
 var S=sizeForStage();
 var ggbEl=document.getElementById('ggb');
 ggbEl.style.width=S+'px'; ggbEl.style.height=S+'px';
@@ -370,6 +398,7 @@ var params={
   enableRightClick:false, enableShiftDragZoom:false, enableLabelDrags:false,
   errorDialogsActive:false, showZoomButtons:false, allowStyleBar:false,
   capturingThreshold:5, borderColor:'#DCE4F0', borderRadius:14,
+  scaleContainerClass:'stage',   /* auto-scale applet to fit .stage (handles resize/rotate) */
   appletOnLoad:function(a){
     api=a; ready=true; configureView();
     var l=document.getElementById('loader'); if(l) l.style.display='none';
