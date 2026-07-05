@@ -380,32 +380,35 @@ function burstConfetti(canvasId,count){
 }
 
 /* ---- GeoGebra ---- */
-function sizeForStage(){
-  /* measure the visible start card's inner width (quiz panel matches it),
-     minus panel padding — avoids the old overflow-on-mobile bug */
-  var card=document.querySelector('#start .card');
-  var inner=card ? card.clientWidth-46 : window.innerWidth-82;
-  return Math.max(250,Math.min(462,inner));
-}
-var S=sizeForStage();
+var applet=null, injected=false;
 var ggbEl=document.getElementById('ggb');
-ggbEl.style.width=S+'px'; ggbEl.style.height=S+'px';
 
-var params={
-  appName:'classic', perspective:'G',
-  width:S, height:S,
-  showToolBar:false, showAlgebraInput:false, showMenuBar:false, showResetIcon:false,
-  enableRightClick:false, enableShiftDragZoom:false, enableLabelDrags:false,
-  errorDialogsActive:false, showZoomButtons:false, allowStyleBar:false,
-  capturingThreshold:5, borderColor:'#DCE4F0', borderRadius:14,
-  scaleContainerClass:'stage',   /* auto-scale applet to fit .stage (handles resize/rotate) */
-  appletOnLoad:function(a){
-    api=a; ready=true; configureView();
-    var l=document.getElementById('loader'); if(l) l.style.display='none';
-  }
-};
-var applet=new GGBApplet(params,true);
-window.addEventListener('load',function(){applet.inject('ggb');});
+function injectApplet(){
+  if(injected) return;
+  injected=true;
+  /* quiz is visible now — measure the real stage width (fixes both the
+     mobile overflow bug and the hidden-container zero-scale bug) */
+  var stage=document.getElementById('stage');
+  var S=Math.max(250,Math.min(462,(stage.clientWidth||window.innerWidth-82)));
+  ggbEl.style.width=S+'px'; ggbEl.style.height=S+'px';
+  stage.style.minHeight=S+'px'; /* keep loader visible while GGB boots */
+  var params={
+    appName:'classic', perspective:'G',
+    width:S, height:S,
+    showToolBar:false, showAlgebraInput:false, showMenuBar:false, showResetIcon:false,
+    enableRightClick:false, enableShiftDragZoom:false, enableLabelDrags:false,
+    errorDialogsActive:false, showZoomButtons:false, allowStyleBar:false,
+    capturingThreshold:5, borderColor:'#DCE4F0', borderRadius:14,
+    scaleContainerClass:'stage',   /* container is visible now, so scaling is correct */
+    appletOnLoad:function(a){
+      api=a; ready=true; configureView();
+      var l=document.getElementById('loader'); if(l) l.style.display='none';
+      stage.style.minHeight='';
+    }
+  };
+  applet=new GGBApplet(params,true);
+  applet.inject('ggb');
+}
 
 function configureView(){
   if(!api) return;
@@ -459,7 +462,7 @@ function loadQuestion(i){
   var action=document.getElementById('actionArea'); action.innerHTML='';
   var readoutRow=document.getElementById('readoutRow');
 
-  if(!ready){ setTimeout(function(){loadQuestion(i);},350); return; }
+  if(!ready){ setTimeout(function(){loadQuestion(i);},150); return; }
 
   api.setRepaintingActive(false);
   api.newConstruction();
@@ -604,6 +607,7 @@ function showResults(){
 document.getElementById('startBtn').onclick=function(){
   document.getElementById('start').classList.add('hidden');
   var q=document.getElementById('quiz'); q.classList.remove('hidden'); q.classList.add('fade');
+  injectApplet(); /* container is visible now */
   current=0; records=[]; streak=0; setStreak(0); loadQuestion(0);
 };
 document.getElementById('nextBtn').onclick=function(){
